@@ -1,0 +1,43 @@
+import sqlite3
+import datetime
+from stock_signals import generateMACDSignals
+
+db = "../data/2014_06_26.db"
+
+bse_handler = open("../resources/bom.csv","r")
+bse = bse_handler.read().split("\n")[:-1]
+
+nse_handler = open("../resources/nse.csv","r")
+nse = nse_handler.read().split("\n")[:-1]
+
+def generateMACDandStore(exchange, symbol);
+    con = sqlite3.connect(db)
+    cursor = con.cursor()
+    query = "select DATE, close from %s_%s order by DATE asc"
+    d  = cursor.execute(query % (exchange.lower(),symbol))
+    data = d.fetchall()
+    format_day_time = lambda x: datetime.datetime.fromtimestamp(int(x)).strftime('%Y-%m-%d')
+    new_values = [(format_day_time(x), y) for x,y in data]
+    closeP = [y for x,y in new_values]
+    results = generateMACDSignals('',closeP)
+    a = list(results)
+    dates = [x for x,y in new_values]
+    a.append(dates)
+    closeP = a[0]
+    emas = a[1]
+    emaf = a[2]
+    macd = a[3]
+    ema9 = a[4]
+    final_str = "DATE,CLOSE,EMA SLOW, EMA FAST, EMA 9, MACD\n"
+    for count in range(len(dates)):
+        final_str = final_str+""+str(dates[count]) + "," +str(closeP[count])+","+str(emas[count])+","+str(emaf[count])+","+str(ema9[count])+","+str(macd[count])+"\n"
+    f = open(exchange.lower()+"_"+symbol+".csv","w")
+    f.write(final_str)
+    f.close()
+
+for symbol in nse:
+    generateMACDandStore('NSE', symbol)
+
+for symbol in bse:
+    generateMACDandStore('BSE', symbol)
+
